@@ -9,7 +9,7 @@
 // int ch: channel of interest
 // returns the 0-based location of the pixel value in the data array
 int pixel_address(const Image &im, int x, int y, int ch) {
-  // TODO: calculate and return the index
+  // DONE: calculate and return the index
   // CHW format
   return ch * im.w * im.h + y * im.w + x;
 }
@@ -19,8 +19,7 @@ int pixel_address(const Image &im, int x, int y, int ch) {
 // int x,y,ch: pixel coordinates and channel of interest
 // returns the value of the clamped pixel at channel ch
 float get_clamped_pixel(const Image &im, int x, int y, int ch) {
-  // TODO: clamp the coordinates and return the correct pixel value
-
+  // DONE: clamp the coordinates and return the correct pixel value
   int h = im.h;
   int w = im.w;
   int c = im.c;
@@ -37,7 +36,7 @@ float get_clamped_pixel(const Image &im, int x, int y, int ch) {
 // Image& im: input image
 // int x,y,ch: pixel coordinates and channel of interest
 void set_pixel(Image &im, int x, int y, int c, float value) {
-  // TODO: Only set the pixel to the value if it's inside the image
+  // DONE: Only set the pixel to the value if it's inside the image
   int h = im.h;
   int w = im.w;
   int ch = im.c;
