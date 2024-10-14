@@ -327,10 +327,28 @@ Image colorize_sobel(const Image &im) {
 // returns the result of applying bilateral filtering to im
 Image bilateral_filter(const Image &im, float sigma1, float sigma2) {
   Image bf = im;
-
-  // TODO: Your bilateral code
-  NOT_IMPLEMENTED();
-
+  int k = 6 * sigma1;
+  k /= 2;
+  for (int c = 0; c < im.c; c++) {
+    for (int y = 0; y < im.h; y++) {
+      for (int x = 0; x < im.w; x++) {
+        double sum = 0;
+        double wsum = 0;
+        for (int fy = -k; fy <= k; fy++) {
+          for (int fx = -k; fx <= k; fx++) {
+            int nx = x + fx;
+            int ny = y + fy;
+            double f = exp(-((fx * fx + fy * fy) / (2 * sigma1 * sigma1) +
+                             pow(im.clamped_pixel(nx, ny, c) - im(x, y, c), 2) /
+                                 (2 * sigma2 * sigma2)));
+            sum += f * im.clamped_pixel(nx, ny, c);
+            wsum += f;
+          }
+        }
+        bf(x, y, c) = sum / wsum;
+      }
+    }
+  }
   return bf;
 }
 
