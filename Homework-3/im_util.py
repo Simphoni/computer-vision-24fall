@@ -38,6 +38,15 @@ def convolve_1d(x, k):
   You can assume zero padding, and an odd-sized kernel
   """
 
+  Nx = len(x)
+  Nk = len(k)
+  y = np.zeros_like(x)
+  pad_width = Nk // 2
+  
+  for i in range(Nx):
+    for j in range(Nk):
+      if i + j - pad_width >= 0 and i + j - pad_width < Nx:
+        y[i] += x[i+j-pad_width] * k[j]
 
   """
   *******************************************
@@ -65,6 +74,12 @@ def convolve_rows(im, k):
   The output should be the same size as the input
   You can assume zero padding, and an odd-sized kernel
   """
+
+  H, W, B = im.shape
+  N = len(k)
+  for i in range(H):
+    for j in range(B):
+      im_out[i, :, j] = convolve_1d(im[i, :, j], k)
 
 
   """
