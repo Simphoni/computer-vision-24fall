@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwritten Digit Recognition</title>
+    <!-- Add Bootstrap CSS link -->
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/5.2.3/css/bootstrap.min.css">
+    <style>
+        /* Your existing styles remain unchanged */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: white; /* Set the entire page background color to white */
+            color: black; /* Set the text color to black */
+        }
+
+        h1 {
+            color: black; /* Set the heading text color to black */
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 300px; /* Decrease canvas container width */
+            margin: 0 auto;
+            background-color: #fff; /* White canvas background */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0); /* Subtle box shadow */
+        }
+
+        canvas {
+            border: 1px solid white; /* Set canvas border color to white */
+            margin-top: 20px;
+            border-radius: 8px; /* Rounded corners */
+        }
+
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 8px; /* Rounded corners */
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+            
+        }
+
+        #button-container {
+            margin-top: 20px;
+        }
+
+        /* Use Bootstrap classes for button styling */
+        button {
+            margin: 0 10px;
+        }
+
+        /* Adjust the bar chart size */
+        #barChart {
+            max-width: 60%; /* Decrease the max width of the bar chart */
+            margin-top: 20px;
+            margin: 0 auto;
+        }
+
+        /* Add new styles for the brush thickness slider */
+        #brush-slider-container {
+            width: 300px;
+            margin: 10px auto;
+        }
+
+        #brush-slider {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Handwritten Digit Recognition</h1>
+
+    <!-- Add brush thickness slider container -->
+    <div id="brush-slider-container">
+        <!-- Updated: Added data-toggle and title attributes for Bootstrap tooltip -->
+        <label for="brush-slider" data-toggle="tooltip" data-placement="top" title="Adjust the brush thickness">Brush Thickness:</label>
+        <input type="range" id="brush-slider" min="1" max="18" value="9" step="1" onchange="updateBrushThickness()">
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="drawingCanvas" width="300" height="300"></canvas>
+    </div>
+    <div id="button-container" class="btn-group">
+        <button class="btn btn-success" onclick="clearCanvas()">Clear</button>
+        <button class="btn btn-primary" onclick="predict()">Predict</button>
+    </div>
+    <div id="result"></div>
+    <img id="predicted-image" style="display:none;" />
+    <!-- Adding a canvas element for the bar chart -->
+    <canvas id="barChart" width="400" height="200"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        var canvas = new fabric.Canvas('drawingCanvas', {
+            isDrawingMode: true,
+            backgroundColor: 'black'
+        });
+
+        canvas.freeDrawingBrush = new fabric['PencilBrush'](canvas);
+        canvas.freeDrawingBrush.color = 'white';
+        var sliderValue = document.getElementById('brush-slider').value;
+        canvas.freeDrawingBrush.width = parseInt(sliderValue);
+
+        var resultDiv = document.getElementById('result');
+        var predictedImage = document.getElementById('predicted-image');
+        var barChart = document.getElementById('barChart');
+        var myChart;
+
+        function clearCanvas() {
+            canvas.clear();
+            canvas.backgroundColor = 'black';
+            canvas.freeDrawingBrush = new fabric['PencilBrush'](canvas);
+            canvas.freeDrawingBrush.color = 'white';
+            var sliderValue = document.getElementById('brush-slider').value;
+            canvas.freeDrawingBrush.width = parseInt(sliderValue);
+
+            resultDiv.innerHTML = 'Predicted Class: _';
+            predictedImage.style.display = 'none';
+        }
+
+        function predict() {
+            canvas.discardActiveObject().renderAll();
+            var imageData = canvas.toDataURL({ format: 'png' });
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'data': imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+
+                if (data.hasOwnProperty('class')) {
+                    resultDiv.innerHTML = 'Predicted Class: ' + data.class;
+                    displayBarChart(data.probabilities);
+                } else {
+                    console.error('Error: Predicted class not found in response.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function displayBarChart(probabilities) {
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            var chartData = probabilities.map(item => item.probability);
+            var chartLabels = probabilities.map(item => item.class);
+
+            var ctx = document.getElementById('barChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Probability',
+                        data: chartData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // New function to update brush thickness
+        function updateBrushThickness() {
+            var sliderValue = document.getElementById('brush-slider').value;
+            canvas.freeDrawingBrush.width = parseInt(sliderValue);
+        }
+    </script>
+    <!-- Add Bootstrap JS and Popper.js -->
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/5.2.3/js/bootstrap.min.js"></script>
+</body>
+
+</html>
