@@ -25,6 +25,7 @@ class CustomDataset(Dataset):
         # TODO：返回数据集的总长度length。你应该用只用1行代码搞定。
 
         # 在这里编写你的代码
+        length = len(self.data)
 
         return length
 
@@ -34,6 +35,13 @@ class CustomDataset(Dataset):
         # label 应该是0-9之间的一个整数，我们会在测试代码中考虑这两点。
 
         # 在这里编写你的代码
+        img_path, label = self.data[idx]
+        image = Image.open(img_path)
+        # convert to tensor
+        if self.transform is not None:
+            image = self.transform(image)
+        else:
+            image = transforms.ToTensor()(image)
 
         return image, label
 

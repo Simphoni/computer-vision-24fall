@@ -51,6 +51,12 @@ class Runner:
 
         # 在这里编写你的代码
 
+        numdata = len(dataset)
+        numtrain = int(numdata * 0.8)
+        numval = int(numdata * 0.1)
+        numtest = numdata - numtrain - numval
+        train_set, val_set, test_set = random_split(dataset, [numtrain, numval, numtest], generator=torch.Generator().manual_seed(42))
+
         # Create DataLoader instances for train, validation, and test sets
         self.train_loader = DataLoader(
             train_set, batch_size=self.batch_size, shuffle=True
@@ -98,6 +104,11 @@ class Runner:
                 # TODO：补全训练流程，它应该包括：梯度清零、前向传播、损失计算、反向传播和参数优化。
 
                 # 在这里编写你的代码（你应该补全5行代码）
+                self.optimizer.zero_grad()
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
+                loss.backward()
+                self.optimizer.step()
 
             # Validation
             self.model.eval()
@@ -114,6 +125,11 @@ class Runner:
 
                     # 在这里编写你的代码
 
+                    outputs = self.model(images)
+                    _, predicted = torch.max(outputs, 1)
+                    total += labels.size(0)
+                    correct += (predicted == labels).sum().item()
+
             # Compute validation accuracy
             accuracy = correct / total # 预测准确率
             print(
@@ -122,16 +138,30 @@ class Runner:
             # TODO：保存验证集准确率最大的模型作为最佳模型。保存模型可以使用 `torch.save()` 函数，最佳模型的命名统一为 `best_model.pth`。
 
             # 在这里编写你的代码
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                torch.save(self.model.state_dict(), 'best_model.pth')
 
     def test(self):
         # TODO：加载最佳模型在测试集上进行测试。
 
         # 在这里编写你的代码
+
+        self.model.eval()
+        correct = 0
+        total = 0
+        for images, labels in self.test_loader:
+            images, labels = images.to(self.device), labels.to(self.device)
+            outputs = self.model(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+        test_accuracy = correct / total
         
         print(f"Test Accuracy: {test_accuracy}")
 
 
-if __name__ == "__main__":·
+if __name__ == "__main__":
     # Initialize Runner
     trainer = Runner()
 

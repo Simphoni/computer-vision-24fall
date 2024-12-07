@@ -3,3 +3,7 @@
 **/__pycache__/
 
 test[0-9]*
+
+mnist*
+
+*.pth
