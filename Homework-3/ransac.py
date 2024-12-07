@@ -51,6 +51,13 @@ class RANSAC:
     ************************************************
     """
 
+    p1h = geometry.hom(p1)
+    p2h = geometry.hom(p2)
+    applied = np.dot(H, p1h)
+
+    for i in range(p1.shape[1]):
+      if np.linalg.norm(applied[:,i] - p2h[:,i]) < inlier_dist:
+        cons[i] = 1
 
     """
     ************************************************
@@ -77,6 +84,10 @@ class RANSAC:
     ****************************************************
     """
 
+    p1h = geometry.hom(p1)
+    p2h = geometry.hom(p2)
+    X_pseudo_inverse = np.linalg.pinv(p1h)
+    S = np.dot(p2h, X_pseudo_inverse)
 
     """
     ****************************************************
@@ -104,7 +115,35 @@ class RANSAC:
     *****************************************************
     """
 
+    num_iterations = self.params['num_iterations']
+    min_sample_dist = self.params['min_sample_dist']
+    num_sample_points = 3
+    num_points = ip1.shape[1]
 
+    rng = np.random.default_rng(6666)
+
+    def get_valid_samples(points, ids):
+      valid_ids = [ids[0]]
+      for i in range(1, points.shape[1]):
+        if np.min(np.linalg.norm(points[:,[ids[i]]] - points[:,valid_ids], axis=0)) > min_sample_dist:
+          valid_ids.append(ids[i])
+        if len(valid_ids) >= num_sample_points:
+          break
+      return valid_ids
+    
+    def get_random_samples(rng, num_points, num_samples):
+      return rng.choice(num_points, num_samples, replace=False)
+
+    for _ in range(num_iterations):
+      id1 = get_valid_samples(ip1, get_random_samples(rng, num_points, num_sample_points + 2))
+      maybe_inliers = ip1[:,id1]
+      maybe_matches = ipm[:,id1]
+      maybe_S = self.compute_similarity(maybe_inliers, maybe_matches)
+      maybe_inliers = self.consistent(maybe_S, ip1, ipm)
+      if np.sum(maybe_inliers) >= np.sum(inliers_best):
+        inliers_best = maybe_inliers
+        S_best = maybe_S
+    inliers_best = inliers_best.astype(bool).tolist()
     """
     *****************************************************
     """

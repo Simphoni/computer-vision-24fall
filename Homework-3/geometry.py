@@ -34,6 +34,17 @@ def compute_rotation(ip1, ip2, K1, K2):
   **********************************************************************
   """
 
+  # map points to rays
+  x = np.linalg.inv(K1) @ hom(ip1)
+  y = np.linalg.inv(K2) @ hom(ip2)
+  
+  # kabsch algorithm
+  W = y @ x.T
+  U, S, V = np.linalg.svd(W)
+  d = np.linalg.det(U) * np.linalg.det(V)
+  R = U @ np.diag([1, 1, d]) @ V
+
+  H = K2 @ R @ np.linalg.inv(K1)
 
   """
   **********************************************************************

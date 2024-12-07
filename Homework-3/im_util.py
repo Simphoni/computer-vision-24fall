@@ -95,8 +95,6 @@ def gauss_kernel(sigma):
   l = int(np.ceil(2 * sigma))
   x = np.linspace(-l, l, 2*l+1)
 
-  # FORNOW
-  gx = np.zeros_like(x)
 
   """
   *******************************************
@@ -104,6 +102,7 @@ def gauss_kernel(sigma):
   *******************************************
   """
 
+  gx = np.exp(-x**2/(2*sigma**2)) / (np.sqrt(2*np.pi)*sigma)
 
   """
   *******************************************
@@ -124,6 +123,8 @@ def convolve_gaussian(im, sigma):
   ***************************************
   """
 
+  gx = gauss_kernel(sigma)
+  imc = convolve(im, gx)
 
   """
   ***************************************
@@ -141,6 +142,18 @@ def compute_gradients(img):
   ***********************************************
   """
 
+  kernel_gx = np.array(
+    [[-1, 0, 1],
+     [-2, 0, 2],
+     [-1, 0, 1]]
+  )
+  kernel_gy = np.array(
+    [[-1, -2, -1],
+     [0, 0, 0],
+     [1, 2, 1]]
+  )
+  Ix = convolve(img, kernel_gx)
+  Iy = convolve(img, kernel_gy)
 
   """
   ***********************************************

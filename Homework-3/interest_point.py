@@ -64,6 +64,15 @@ class InterestPointExtractor:
     **********************************************************
     """
 
+    Ix, Iy = im_util.compute_gradients(img)
+    window_size = 5
+    sum_kernel = np.ones((window_size, window_size))
+    Ix2 = im_util.convolve(Ix**2, sum_kernel)
+    Iy2 = im_util.convolve(Iy**2, sum_kernel)
+    IxIy = im_util.convolve(Ix*Iy, sum_kernel)
+    det = Ix2 * Iy2 - IxIy**2
+    trace = Ix2 + Iy2
+    ip_fun = det - 0.04 * trace**2
 
     """
     **********************************************************
@@ -107,6 +116,11 @@ class InterestPointExtractor:
     Hint: try scipy filters.maximum_filter with im_util.disc_mask
     """
 
+    max_ip_fun = filters.maximum_filter(ip_fun, footprint=im_util.disc_mask(suppression_radius_pixels))
+    maxima = (ip_fun == max_ip_fun) & (ip_fun > strength_threshold)
+    border_mask = np.zeros_like(maxima)
+    border_mask[border_pixels:H-border_pixels, border_pixels:W-border_pixels, :] = True
+    row, col, _ = np.where(maxima & border_mask)
 
     """
     ***************************************************
@@ -120,8 +134,8 @@ class DescriptorExtractor:
   """
   def __init__(self):
     self.params={}
-    self.params['patch_size']=8
-    self.params['ratio_threshold']=1.0
+    self.params['patch_size']=16
+    self.params['ratio_threshold']=0.75
 
   def get_descriptors(self, img, ip):
     """
@@ -154,6 +168,9 @@ class DescriptorExtractor:
       ******************************************************
       """
 
+      for j in range(patch_size):
+        for k in range(patch_size):
+          patch[j,k] = img[row+j-patch_size_div2, col+k-patch_size_div2]
 
       """
       ******************************************************

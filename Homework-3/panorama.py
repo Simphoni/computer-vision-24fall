@@ -69,6 +69,32 @@ class PanoramaStitcher:
     ***************************************************************
     """
 
+    def get_ips(li):
+      ip1 = np.array([li[0], li[1]])
+      ip2 = np.array([li[2], li[3]])
+      return ip1, ip2
+    
+    fov_degrees = self.params['fov_degrees']
+
+    # run a kruskal from 0 to get the order of the images
+    point_set = set()
+    point_set.add(0)
+    for i in range(1, num_images):
+      best_dist = 0
+      best_pair = None
+      for src in point_set:
+        for dst in range(num_images):
+          if dst not in point_set and self.num_matches[src][dst] > best_dist:
+            best_dist = self.num_matches[src][dst]
+            best_pair = (src, dst)
+      src, dst = best_pair
+      print(best_pair)
+      point_set.add(dst)
+      K1 = geometry.get_calibration(self.images[src].shape, fov_degrees)
+      K2 = geometry.get_calibration(self.images[dst].shape, fov_degrees)
+      ip1, ip2 = get_ips(self.matches[src][dst])
+      R, _ = geometry.compute_rotation(ip1, ip2, K1, K2)
+      self.R_matrices[dst] = R @ self.R_matrices[src]
 
     """
     ***************************************************************

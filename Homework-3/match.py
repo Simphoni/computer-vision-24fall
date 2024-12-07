@@ -71,12 +71,15 @@ class ImageMatcher:
         if (i==j):
           continue
 
-        matchesij = desc_ex.match_descriptors(descriptors[i],descriptors[j])
+        # matchesij = desc_ex.match_descriptors(descriptors[i],descriptors[j])
+        matchesij, ratio_pass = desc_ex.match_ratio_test(descriptors[i], descriptors[j])
         ipm = interest_points[j][:, matchesij]
-        S, inliers = rn.ransac_similarity(ipi, ipm)
+        ipiv = ipi[:, ratio_pass]
+        ipmv = ipm[:, ratio_pass]
+        S, inliers = rn.ransac_similarity(ipiv, ipmv)
         num_matches[i,j]=np.sum(inliers)
-        ipic=ipi[:, inliers]
-        ipmc=ipm[:, inliers]
+        ipic=ipiv[:, inliers]
+        ipmc=ipmv[:, inliers]
         matches[i][j]=np.concatenate((ipic,ipmc),0)
 
         if (self.params['draw_matches']):
